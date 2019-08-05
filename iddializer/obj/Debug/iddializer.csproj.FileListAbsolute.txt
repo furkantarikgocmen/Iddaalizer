@@ -10,3 +10,5 @@ C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\RestSharp.xml
 C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.csproj.CopyComplete
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\Newtonsoft.Json.dll
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\Newtonsoft.Json.xml
+C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\EPPlus.dll
+C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\EPPlus.xml

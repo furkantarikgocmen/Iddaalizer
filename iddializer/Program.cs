@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 using RestSharp;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using OfficeOpenXml;
+using System.IO;
 
 namespace iddializer
 {
@@ -19,42 +20,93 @@ namespace iddializer
 
             string[] gun = { "01", "02", "03", "04", "05", "06", "07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","22","23","24","25","26","27","28","29","30","31"};
             string[] ay = { "01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"};
-
-            for (int y = 2018; y <= 2019+1; y++) //2000
+            int sayac = 3;
+            var data = new FileInfo(@"data.xlsx");
+            using (var p = new ExcelPackage(data))
             {
-                for (int a = 0; a <= ay.Length+1; a++)
+                var ws = p.Workbook.Worksheets["BULTEN"];
+                for (int y = 2018; y <= 2019 + 1; y++) //2000
                 {
-                    for (int g = 0; g <= gun.Length; g++)
+                    for (int a = 11; a < ay.Length; a++)
                     {
-                        string tarih = gun[g]+"/"+ay[a]+"/"+y;
-                        string json = getData(tarih);
-                        if (json != "error" && json != "null")   
+                        for (int g = 25; g < gun.Length; g++)
                         {
-                            Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
-
-                            for (int i = 0; i < datalist.m.Count; i++)
+                            string tarih = gun[g] + "/" + ay[a] + "/" + y;
+                            string json = getData(tarih);
+                            if (json != "error" && json != "null")
                             {
-                                //Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], datalist.m[i][2], datalist.m[i][4]);
-                                if (Convert.ToString(datalist.m[i][14]) != "0")
+                                Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
+                                for (int i = 0; i < datalist.m.Count; i++)
                                 {
-                                    try
+                                    //Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], datalist.m[i][2], datalist.m[i][4]);
+                                    if (Convert.ToString(datalist.m[i][14]) != "0")
                                     {
-
-                                        string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                        Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
-                                        for (int j = 0; j < detaylar.ARR.Count; j++)
+                                        try
                                         {
-                                            Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
+
+                                            string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                            Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
+                                            for (int j = 0; j < detaylar.ARR.Count; j++)
+                                            {
+                                                Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
+
+                                                ws.Cells["A" + sayac].Value = sayac;
+                                                ws.Cells["B" + sayac].Value = tarih;
+                                                ws.Cells["C" + sayac].Value = detaylar.ARR[j].T1; //Takım 1
+                                                ws.Cells["D" + sayac].Value = detaylar.ARR[j].T2; //Takım 2
+                                                ws.Cells["E" + sayac].Value = datalist.m[i][12]+"-"+ datalist.m[i][12]; //Maç Sonucu
+                                                ws.Cells["F" + sayac].Value = datalist.m[i][7]; //İlk Yarı
+                                                ws.Cells["G" + sayac].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
+                                                ws.Cells["H" + sayac].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
+                                                ws.Cells["I" + sayac].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
+                                                ws.Cells["J" + sayac].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
+                                                ws.Cells["K" + sayac].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
+                                                ws.Cells["L" + sayac].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
+                                                ws.Cells["M" + sayac].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
+                                                ws.Cells["N" + sayac].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
+                                                ws.Cells["O" + sayac].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
+                                                ws.Cells["P" + sayac].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
+                                                ws.Cells["Q" + sayac].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
+                                                ws.Cells["R" + sayac].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
+                                                ws.Cells["S" + sayac].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
+                                                ws.Cells["T" + sayac].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
+                                                ws.Cells["U" + sayac].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
+                                                ws.Cells["V" + sayac].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
+                                                ws.Cells["W" + sayac].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
+                                                ws.Cells["X" + sayac].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
+                                                ws.Cells["Y" + sayac].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
+
+
+                                                ws.Cells["Z" + sayac].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
+                                                ws.Cells["AA" + sayac].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
+                                                ws.Cells["AB" + sayac].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
+
+
+                                                //İlk Yarı Maç Sonucu
+                                                ws.Cells["AC" + sayac].Value = detaylar.ARR[j].IYMS11;
+                                                ws.Cells["AD" + sayac].Value = detaylar.ARR[j].IYMS10;
+                                                ws.Cells["AE" + sayac].Value = detaylar.ARR[j].IYMS12;
+                                                ws.Cells["AF" + sayac].Value = detaylar.ARR[j].IYMS01;
+                                                ws.Cells["AG" + sayac].Value = detaylar.ARR[j].IYMS00;
+                                                ws.Cells["AH" + sayac].Value = detaylar.ARR[j].IYMS02;
+                                                ws.Cells["AI" + sayac].Value = detaylar.ARR[j].IYMS21;
+                                                ws.Cells["AJ" + sayac].Value = detaylar.ARR[j].IYMS20;
+                                                ws.Cells["AK" + sayac].Value = detaylar.ARR[j].IYMS22;
+
+
+                                                p.Save();
+                                                sayac++;
+                                            }
                                         }
-                                    }
-                                    catch
-                                    {
-                                        //basketbol ya da hata
+                                        catch
+                                        {
+                                            //basketbol ya da hata
+                                        }
                                     }
                                 }
                             }
-                        }
 
+                        }
                     }
                 }
             }
