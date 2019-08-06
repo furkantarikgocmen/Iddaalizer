@@ -1,7 +1,6 @@
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\iddializer.exe.config
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\iddializer.exe
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\iddializer.pdb
-C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.csprojAssemblyReference.cache
 C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.csproj.CoreCompileInputs.cache
 C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.exe
 C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.pdb
@@ -12,3 +11,4 @@ C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\Newtonsoft.Json.dll
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\Newtonsoft.Json.xml
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\EPPlus.dll
 C:\Users\FTG\source\repos\iddializer\iddializer\bin\Debug\EPPlus.xml
+C:\Users\FTG\source\repos\iddializer\iddializer\obj\Debug\iddializer.csprojAssemblyReference.cache

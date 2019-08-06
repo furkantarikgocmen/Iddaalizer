@@ -7,6 +7,7 @@ using RestSharp;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace iddializer
 {
@@ -25,11 +26,11 @@ namespace iddializer
             using (var p = new ExcelPackage(data))
             {
                 var ws = p.Workbook.Worksheets["BULTEN"];
-                for (int y = 2018; y <= 2019 + 1; y++) //2000
+                for (int y = 2019; y <= 2019 + 1; y++) //2000
                 {
-                    for (int a = 11; a < ay.Length; a++)
+                    for (int a = 7; a < 8; a++) // < ay.length
                     {
-                        for (int g = 25; g < gun.Length; g++)
+                        for (int g = 0; g < 5; g++) // < gun.length-1
                         {
                             string tarih = gun[g] + "/" + ay[a] + "/" + y;
                             string json = getData(tarih);
@@ -38,23 +39,26 @@ namespace iddializer
                                 Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
                                 for (int i = 0; i < datalist.m.Count; i++)
                                 {
-                                    //Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], datalist.m[i][2], datalist.m[i][4]);
-                                    if (Convert.ToString(datalist.m[i][14]) != "0")
+                                    if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT")
                                     {
+                                        string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                        Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
+
                                         try
                                         {
-
-                                            string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                            Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
                                             for (int j = 0; j < detaylar.ARR.Count; j++)
                                             {
                                                 Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
 
-                                                ws.Cells["A" + sayac].Value = sayac;
-                                                ws.Cells["B" + sayac].Value = tarih;
+                                                string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
+                                                string ulke = ulkeler[9].Trim();
+                                                ulke = ulke.Replace("\"", "");
+
+                                                ws.Cells["A" + sayac].Value = ulke;//[36][9] Ülke
+                                                ws.Cells["B" + sayac].Value = datalist.m[i][35]; //tarih VE SAAT
                                                 ws.Cells["C" + sayac].Value = detaylar.ARR[j].T1; //Takım 1
                                                 ws.Cells["D" + sayac].Value = detaylar.ARR[j].T2; //Takım 2
-                                                ws.Cells["E" + sayac].Value = datalist.m[i][12]+"-"+ datalist.m[i][12]; //Maç Sonucu
+                                                ws.Cells["E" + sayac].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
                                                 ws.Cells["F" + sayac].Value = datalist.m[i][7]; //İlk Yarı
                                                 ws.Cells["G" + sayac].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
                                                 ws.Cells["H" + sayac].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
@@ -94,13 +98,16 @@ namespace iddializer
                                                 ws.Cells["AK" + sayac].Value = detaylar.ARR[j].IYMS22;
 
 
-                                                p.Save();
+                                                //p.Save();
                                                 sayac++;
                                             }
                                         }
-                                        catch
+                                        catch(Exception e)
                                         {
-                                            //basketbol ya da hata
+                                            /*
+                                            Console.WriteLine(e.Message);
+                                            Console.WriteLine("Excell'e Aktarılırken Bir Hata Oldu");
+                                            */
                                         }
                                     }
                                 }
@@ -109,6 +116,7 @@ namespace iddializer
                         }
                     }
                 }
+                p.Save();
             }
 
             
