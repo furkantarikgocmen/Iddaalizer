@@ -32,7 +32,7 @@ namespace iddializer
                     if(ws.Cells["B" + 3].Value != null) //Tabloda Veri Varsa
                     {
                         baslangicData = Convert.ToString(ws.Cells["B" + GetLastUsedRow(ws)].Value).Split('/'); //Son eklenen verinin tarihini al
-                        baslangicData[0] = Convert.ToString(Convert.ToInt32(baslangicData[0]) + 1); // Son eklenen verinin tarhini bir sonraki güne artır
+                        baslangicData[0] = Convert.ToString(Convert.ToInt32(baslangicData[0])); // Son eklenen verinin tarhini bir sonraki güne artır:::: +1'i trycatch'e ekledim
                     }
                     else //Tabloda veri yoksa
                         baslangicData = "17/04/2004".Split('/'); //İlk veriyi çekmeye başla
@@ -100,8 +100,16 @@ namespace iddializer
                 else
                     satir = 3;
 
-
-                DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
+                DateTime start;
+                try
+                {
+                   start = new DateTime(baslangicYil, baslangicAy, baslangicGun +1);
+                }
+                catch
+                {
+                    start = new DateTime(baslangicYil + 1, 1, 1);
+                }
+                //DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
                 DateTime end = new DateTime(bitisYil, bitisAy, bitisGun);
                 int days = (end - start).Days;
 
@@ -121,7 +129,7 @@ namespace iddializer
                                 if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT")
                                 {
                                     string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                    Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
+                                    Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
 
                                     try
                                     {
@@ -180,7 +188,7 @@ namespace iddializer
                                             satir++;
                                         }
                                     }
-                                    catch (Exception e)
+                                    catch
                                     {
                                         /*
                                         Console.WriteLine(e.Message);
