@@ -15,29 +15,92 @@ namespace iddializer
     {
         static void Main(string[] args)
         {
-
-            Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
-            Console.WriteLine("Örneğin : 9/7/2017");
-            string[] baslangicData = Console.ReadLine().Split('/');
-
-            int baslangicGun = Convert.ToInt32(baslangicData[0]);
-            int baslangicAy = Convert.ToInt32(baslangicData[1]);
-            int baslangicYil = Convert.ToInt32(baslangicData[2]);
-
-            Console.WriteLine("Lütfen Verinin Alınmaya Durdurulacağı Tarihi G/A/YYYY Şeklinde Girin");
-            Console.WriteLine("Örneğin : 5/11/2018");
-            string[] bitisData = Console.ReadLine().Split('/');
-
-            int bitisGun = Convert.ToInt32(bitisData[0]);
-            int bitisAy = Convert.ToInt32(bitisData[1]);
-            int bitisYil = Convert.ToInt32(bitisData[2]);
-            
-
-
-            int sayac = 3;
             var data = new FileInfo(@"data.xlsx");
             using (var p = new ExcelPackage(data))
             {
+                var ws = p.Workbook.Worksheets["BULTEN"];
+
+                Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
+                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 2004 tarihinden itibaren bütün veriler istenecektir");
+                Console.WriteLine("Örneğin : 9/7/2017");
+                string[] baslangicData;
+
+                string baslangicKontrol = Console.ReadLine();
+
+                if (baslangicKontrol == "") //Veri Girilmemişse
+                {
+                    if(ws.Cells["B" + 3].Value != null) //Tabloda Veri Varsa
+                    {
+                        baslangicData = Convert.ToString(ws.Cells["B" + GetLastUsedRow(ws)].Value).Split('/'); //Son eklenen verinin tarihini al
+                        baslangicData[0] = Convert.ToString(Convert.ToInt32(baslangicData[0]) + 1); // Son eklenen verinin tarhini bir sonraki güne artır
+                    }
+                    else //Tabloda veri yoksa
+                        baslangicData = "17/04/2004".Split('/'); //İlk veriyi çekmeye başla
+
+                }
+                else //Veri girilmişse
+                {
+                    baslangicData = baslangicKontrol.Split('/'); //Girilen veriyi diziye at
+
+                    bool durum = true; //O tarih daha önce alınmış mı?
+                    DateTime kontrol = new DateTime(Convert.ToInt32(baslangicKontrol.Split('/')[2]), Convert.ToInt32(baslangicKontrol.Split('/')[1]), Convert.ToInt32(baslangicKontrol.Split('/')[0]));
+                    for (int i = 3; i < GetLastUsedRow(ws)-4; i++)
+                    {
+                        if(Convert.ToString(ws.Cells["B" + i].Value) == kontrol.ToString("dd\\/MM\\/yyyy"))
+                        {
+                            durum = false;
+                            break;
+                        }
+                    }
+
+                    if(durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
+                    {
+                        Console.WriteLine("Bu Tarihteki Data Daha Önce Akınmış. Program Kapatmak için bir tuşa basın.");
+                        Console.ReadKey();
+                        Environment.Exit(0);
+                    }
+                }
+                    
+                int baslangicGun = Convert.ToInt32(baslangicData[0]);
+                int baslangicAy = Convert.ToInt32(baslangicData[1]);
+                int baslangicYil = Convert.ToInt32(baslangicData[2]);
+
+
+                //Bitiş Tarihi
+                Console.WriteLine("Lütfen Verinin Alınmaya Durdurulacağı Tarihi G/A/YYYY Şeklinde Girin");
+                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa belirttiğiniz başlangıç tarihinden dün'e kadar olan bütün veriler istenecektir.");
+                Console.WriteLine("Örneğin : 5/11/2018");
+                string[] bitisData;
+
+                string bitisKontrol = Console.ReadLine();
+
+                if (bitisKontrol == "") //Bitiş Tarihi Girilmemişse dünkü veriye kadar al
+                {
+                    DateTime dt = DateTime.Now;
+                    bitisData = dt.ToString(("dd'/'MM'/'yyyy")).Split('/');
+                    //bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]) + 1);
+                }
+                else //Bitiş Tarihi girilmişse girilen tarih dahil tüm verileri al
+                {
+                    bitisData = bitisKontrol.Split('/');
+                    bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]) + 1);
+                }
+
+                int bitisGun = Convert.ToInt32(bitisData[0]);
+                int bitisAy = Convert.ToInt32(bitisData[1]);
+                int bitisYil = Convert.ToInt32(bitisData[2]);
+
+
+                //int sayac = 0;
+                int satir;
+                
+                int lastUsedRow = GetLastUsedRow(ws);
+                if (lastUsedRow > 3)
+                    satir = lastUsedRow+1;
+                else
+                    satir = 3;
+
+
                 DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
                 DateTime end = new DateTime(bitisYil, bitisAy, bitisGun);
                 int days = (end - start).Days;
@@ -48,8 +111,6 @@ namespace iddializer
                     .ToList()
                     .ForEach(d =>
                     {
-
-                        var ws = p.Workbook.Worksheets["BULTEN"];
                         string tarih = d.ToString("dd\\/MM\\/yyyy");
                         string json = getData(tarih);
                         if (json != "error" && json != "null")
@@ -72,52 +133,51 @@ namespace iddializer
                                             string ulke = ulkeler[9].Trim();
                                             ulke = ulke.Replace("\"", "");
 
-                                            ws.Cells["A" + sayac].Value = ulke;//[36][9] Ülke
-                                            ws.Cells["B" + sayac].Value = datalist.m[i][35]; //tarih VE SAAT
-                                            ws.Cells["C" + sayac].Value = detaylar.ARR[j].T1; //Takım 1
-                                            ws.Cells["D" + sayac].Value = detaylar.ARR[j].T2; //Takım 2
-                                            ws.Cells["E" + sayac].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
-                                            ws.Cells["F" + sayac].Value = datalist.m[i][7]; //İlk Yarı
-                                            ws.Cells["G" + sayac].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
-                                            ws.Cells["H" + sayac].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
-                                            ws.Cells["I" + sayac].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
-                                            ws.Cells["J" + sayac].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
-                                            ws.Cells["K" + sayac].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
-                                            ws.Cells["L" + sayac].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
-                                            ws.Cells["M" + sayac].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
-                                            ws.Cells["N" + sayac].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
-                                            ws.Cells["O" + sayac].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
-                                            ws.Cells["P" + sayac].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
-                                            ws.Cells["Q" + sayac].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
-                                            ws.Cells["R" + sayac].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
-                                            ws.Cells["S" + sayac].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
-                                            ws.Cells["T" + sayac].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
-                                            ws.Cells["U" + sayac].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
-                                            ws.Cells["V" + sayac].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
-                                            ws.Cells["W" + sayac].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
-                                            ws.Cells["X" + sayac].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
-                                            ws.Cells["Y" + sayac].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
+                                            ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
+                                            ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
+                                            ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+                                            ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
+                                            ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
+                                            ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
+                                            ws.Cells["G" + satir].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
+                                            ws.Cells["H" + satir].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
+                                            ws.Cells["I" + satir].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
+                                            ws.Cells["J" + satir].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
+                                            ws.Cells["K" + satir].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
+                                            ws.Cells["L" + satir].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
+                                            ws.Cells["M" + satir].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
+                                            ws.Cells["N" + satir].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
+                                            ws.Cells["O" + satir].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
+                                            ws.Cells["P" + satir].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
+                                            ws.Cells["Q" + satir].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
+                                            ws.Cells["R" + satir].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
+                                            ws.Cells["S" + satir].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
+                                            ws.Cells["T" + satir].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
+                                            ws.Cells["U" + satir].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
+                                            ws.Cells["V" + satir].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
+                                            ws.Cells["W" + satir].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
+                                            ws.Cells["X" + satir].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
+                                            ws.Cells["Y" + satir].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
 
 
-                                            ws.Cells["Z" + sayac].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
-                                            ws.Cells["AA" + sayac].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
-                                            ws.Cells["AB" + sayac].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
+                                            ws.Cells["Z" + satir].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
+                                            ws.Cells["AA" + satir].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
+                                            ws.Cells["AB" + satir].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
 
 
                                             //İlk Yarı Maç Sonucu
-                                            ws.Cells["AC" + sayac].Value = detaylar.ARR[j].IYMS11;
-                                            ws.Cells["AD" + sayac].Value = detaylar.ARR[j].IYMS10;
-                                            ws.Cells["AE" + sayac].Value = detaylar.ARR[j].IYMS12;
-                                            ws.Cells["AF" + sayac].Value = detaylar.ARR[j].IYMS01;
-                                            ws.Cells["AG" + sayac].Value = detaylar.ARR[j].IYMS00;
-                                            ws.Cells["AH" + sayac].Value = detaylar.ARR[j].IYMS02;
-                                            ws.Cells["AI" + sayac].Value = detaylar.ARR[j].IYMS21;
-                                            ws.Cells["AJ" + sayac].Value = detaylar.ARR[j].IYMS20;
-                                            ws.Cells["AK" + sayac].Value = detaylar.ARR[j].IYMS22;
+                                            ws.Cells["AC" + satir].Value = detaylar.ARR[j].IYMS11;
+                                            ws.Cells["AD" + satir].Value = detaylar.ARR[j].IYMS10;
+                                            ws.Cells["AE" + satir].Value = detaylar.ARR[j].IYMS12;
+                                            ws.Cells["AF" + satir].Value = detaylar.ARR[j].IYMS01;
+                                            ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS00;
+                                            ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS02;
+                                            ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS21;
+                                            ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS20;
+                                            ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS22;
 
-
-                                            //p.Save();
-                                            sayac++;
+                                            //sayac++;
+                                            satir++;
                                         }
                                     }
                                     catch (Exception e)
@@ -130,12 +190,14 @@ namespace iddializer
                                 }
                             }
                         }
-
                     }); 
                 p.Save();
             }
             Console.WriteLine("End of the data");
-            
+            //Console.Write("Eklenen toplam maç sayısı : " + sayac);
+
+            Console.ReadKey();
+
 
             string getData(string date)
             {
@@ -176,7 +238,20 @@ namespace iddializer
                 return response.Content;
             }
 
-            Console.ReadKey();
+            int GetLastUsedRow(ExcelWorksheet sheet)
+            {
+                var row = sheet.Dimension.End.Row;
+                while (row >= 1)
+                {
+                    var range = sheet.Cells[row, 1, row, sheet.Dimension.End.Column];
+                    if (range.Any(c => !string.IsNullOrEmpty(c.Text)))
+                    {
+                        break;
+                    }
+                    row--;
+                }
+                return row;
+            }
         }
 
         
