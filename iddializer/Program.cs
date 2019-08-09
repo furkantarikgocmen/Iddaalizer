@@ -128,8 +128,22 @@ namespace iddializer
                             {
                                 if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT")
                                 {
-                                    string details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                    Detaylar detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
+                                    string details;
+                                    Detaylar detaylar;
+                                    try
+                                    {
+                                        details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
+                                    }
+                                    catch
+                                    {
+                                        Console.WriteLine("Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
+                                        System.Threading.Thread.Sleep(10000);
+                                        details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
+                                    }
+                                   
+                                    
 
                                     try
                                     {
@@ -244,6 +258,7 @@ namespace iddializer
                 IRestResponse response = client.Execute(request);
 
                 return response.Content;
+
             }
 
             int GetLastUsedRow(ExcelWorksheet sheet)
