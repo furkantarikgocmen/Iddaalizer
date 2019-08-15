@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using RestSharp;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using System.IO;
-using Newtonsoft.Json.Linq;
 
 namespace iddializer
 {
@@ -15,15 +12,21 @@ namespace iddializer
     {
         static void Main(string[] args)
         {
-            var data = new FileInfo(@"data.xlsx");
+            var data = new FileInfo(@"data.xlsx"); //Data excel dosyasını oku
             using (var p = new ExcelPackage(data))
             {
-                var ws = p.Workbook.Worksheets["BULTEN"];
+
+                var ws = p.Workbook.Worksheets["BULTEN"]; //Excel dosyasında sayfa seç
+                DateTime bugun = DateTime.Now; //Bu günün tarihini al
+                
+
 
                 Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
-                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 2004 tarihinden itibaren bütün veriler istenecektir");
+                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 17/04/2004 tarihinden itibaren bütün veriler istenecektir");
                 Console.WriteLine("Örneğin : 9/7/2017");
                 string[] baslangicData;
+                if (ws.Cells["B" + 3].Value != null) // Eğer veri varsa son tarihi ekrana yazdır
+                    Console.WriteLine("Son Alınan Tarih " + ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value); //
 
                 string baslangicKontrol = Console.ReadLine();
 
@@ -31,18 +34,37 @@ namespace iddializer
                 {
                     if(ws.Cells["B" + 3].Value != null) //Tabloda Veri Varsa
                     {
+
+                        //Bu Gün Alınmış Mı?
+                        string sonBitisData = bugun.ToString(("dd'/'MM'/'yyyy"));
+                        if (Convert.ToString(ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value) == sonBitisData)
+                        {
+                            Console.WriteLine("Bu Gün Zaten Senkoronize Edilmiş. Program Kapatılıyor...");
+                            Console.ReadKey();
+                            Environment.Exit(0);
+                        }
+
+
                         baslangicData = Convert.ToString(ws.Cells["B" + GetLastUsedRow(ws)].Value).Split('/'); //Son eklenen verinin tarihini al
-                        baslangicData[0] = Convert.ToString(Convert.ToInt32(baslangicData[0])); // Son eklenen verinin tarhini bir sonraki güne artır:::: +1'i trycatch'e ekledim
+                       
+                        //Tarihi 1 artır
+                        DateTime eskiTarih = new DateTime(Convert.ToInt32(baslangicData[2]), Convert.ToInt32(baslangicData[1]), Convert.ToInt32(baslangicData[0]));
+                        DateTime yeniTarih = eskiTarih.AddDays(1);
+                        string[] yeniGun = yeniTarih.ToString(("dd'/'MM'/'yyyy")).Split('/');
+                        baslangicData = yeniGun;
+
                     }
                     else //Tabloda veri yoksa
                         baslangicData = "17/04/2004".Split('/'); //İlk veriyi çekmeye başla
 
                 }
+
                 else //Veri girilmişse
                 {
                     baslangicData = baslangicKontrol.Split('/'); //Girilen veriyi diziye at
 
-                    bool durum = true; //O tarih daha önce alınmış mı?
+                    //O tarih daha önce alınmış mı?
+                    bool durum = true; 
                     DateTime kontrol = new DateTime(Convert.ToInt32(baslangicKontrol.Split('/')[2]), Convert.ToInt32(baslangicKontrol.Split('/')[1]), Convert.ToInt32(baslangicKontrol.Split('/')[0]));
                     for (int i = 3; i < GetLastUsedRow(ws)-4; i++)
                     {
@@ -55,7 +77,7 @@ namespace iddializer
 
                     if(durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
                     {
-                        Console.WriteLine("Bu Tarihteki Data Daha Önce Akınmış. Program Kapatmak için bir tuşa basın.");
+                        Console.WriteLine("Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -74,51 +96,56 @@ namespace iddializer
 
                 string bitisKontrol = Console.ReadLine();
 
-                if (bitisKontrol == "") //Bitiş Tarihi Girilmemişse dünkü veriye kadar al
+                if (bitisKontrol == "") //Bitiş Tarihi Girilmemişse bugünkü veriye kadar al
                 {
-                    DateTime dt = DateTime.Now;
-                    bitisData = dt.ToString(("dd'/'MM'/'yyyy")).Split('/');
-                    //bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]) + 1);
+                    bitisData = bugun.ToString(("dd'/'MM'/'yyyy")).Split('/');
                 }
                 else //Bitiş Tarihi girilmişse girilen tarih dahil tüm verileri al
                 {
                     bitisData = bitisKontrol.Split('/');
-                    bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]) + 1);
+                    bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]));
                 }
 
                 int bitisGun = Convert.ToInt32(bitisData[0]);
                 int bitisAy = Convert.ToInt32(bitisData[1]);
                 int bitisYil = Convert.ToInt32(bitisData[2]);
 
-
-                //int sayac = 0;
-                int satir;
                 
-                int lastUsedRow = GetLastUsedRow(ws);
-                if (lastUsedRow > 3)
-                    satir = lastUsedRow+1;
-                else
-                    satir = 3;
-
-                DateTime start;
-                try
-                {
-                   start = new DateTime(baslangicYil, baslangicAy, baslangicGun +1);
-                }
-                catch
-                {
-                    start = new DateTime(baslangicYil + 1, 1, 1);
-                }
-                //DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
+                DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
                 DateTime end = new DateTime(bitisYil, bitisAy, bitisGun);
                 int days = (end - start).Days;
 
+                if (start > bugun)
+                {
+                    Console.WriteLine("Girilen Başlangıç Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+                if (end > bugun)
+                {
+                    Console.WriteLine("Girilen Bitiş Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
+
+                int satir;
+
+                int lastUsedRow = GetLastUsedRow(ws);
+                if (lastUsedRow > 3)
+                    satir = lastUsedRow + 1;
+                else
+                    satir = 3;
+
+                //int sayac;
+
+
                 Enumerable
-                    .Range(0, days)
+                    .Range(0, days+1)
                     .Select(x => start.AddDays(x))
                     .ToList()
                     .ForEach(d =>
                     {
+                        
                         string tarih = d.ToString("dd\\/MM\\/yyyy");
                         string json = getData(tarih);
                         if (json != "error" && json != "null")
@@ -133,81 +160,84 @@ namespace iddializer
                                     try
                                     {
                                         details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
+                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
                                     }
                                     catch
                                     {
                                         Console.WriteLine("Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
                                         System.Threading.Thread.Sleep(10000);
                                         details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details); //todo buraya da response=null return error ekle
+                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
                                     }
                                    
-                                    
-
                                     try
                                     {
-                                        for (int j = 0; j < detaylar.ARR.Count; j++)
+                                        if (details != "") //else Basketbol Datası
                                         {
-                                            Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
+                                            for (int j = 0; j < detaylar.ARR.Count; j++)
+                                            {
+                                                Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
 
-                                            string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
-                                            string ulke = ulkeler[9].Trim();
-                                            ulke = ulke.Replace("\"", "");
+                                                string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
+                                                string ulke = ulkeler[9].Trim();
+                                                ulke = ulke.Replace("\"", "");
 
-                                            ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
-                                            ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
-                                            ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
-                                            ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
-                                            ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
-                                            ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
-                                            ws.Cells["G" + satir].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
-                                            ws.Cells["H" + satir].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
-                                            ws.Cells["I" + satir].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
-                                            ws.Cells["J" + satir].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
-                                            ws.Cells["K" + satir].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
-                                            ws.Cells["L" + satir].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
-                                            ws.Cells["M" + satir].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
-                                            ws.Cells["N" + satir].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
-                                            ws.Cells["O" + satir].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
-                                            ws.Cells["P" + satir].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
-                                            ws.Cells["Q" + satir].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
-                                            ws.Cells["R" + satir].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
-                                            ws.Cells["S" + satir].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
-                                            ws.Cells["T" + satir].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
-                                            ws.Cells["U" + satir].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
-                                            ws.Cells["V" + satir].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
-                                            ws.Cells["W" + satir].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
-                                            ws.Cells["X" + satir].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
-                                            ws.Cells["Y" + satir].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
-
-
-                                            ws.Cells["Z" + satir].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
-                                            ws.Cells["AA" + satir].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
-                                            ws.Cells["AB" + satir].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
+                                                ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
+                                                ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
+                                                ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+                                                ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
+                                                ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
+                                                ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
+                                                ws.Cells["G" + satir].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
+                                                ws.Cells["H" + satir].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
+                                                ws.Cells["I" + satir].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
+                                                ws.Cells["J" + satir].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
+                                                ws.Cells["K" + satir].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
+                                                ws.Cells["L" + satir].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
+                                                ws.Cells["M" + satir].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
+                                                ws.Cells["N" + satir].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
+                                                ws.Cells["O" + satir].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
+                                                ws.Cells["P" + satir].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
+                                                ws.Cells["Q" + satir].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
+                                                ws.Cells["R" + satir].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
+                                                ws.Cells["S" + satir].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
+                                                ws.Cells["T" + satir].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
+                                                ws.Cells["U" + satir].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
+                                                ws.Cells["V" + satir].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
+                                                ws.Cells["W" + satir].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
+                                                ws.Cells["X" + satir].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
+                                                ws.Cells["Y" + satir].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
 
 
-                                            //İlk Yarı Maç Sonucu
-                                            ws.Cells["AC" + satir].Value = detaylar.ARR[j].IYMS11;
-                                            ws.Cells["AD" + satir].Value = detaylar.ARR[j].IYMS10;
-                                            ws.Cells["AE" + satir].Value = detaylar.ARR[j].IYMS12;
-                                            ws.Cells["AF" + satir].Value = detaylar.ARR[j].IYMS01;
-                                            ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS00;
-                                            ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS02;
-                                            ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS21;
-                                            ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS20;
-                                            ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS22;
+                                                ws.Cells["Z" + satir].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
+                                                ws.Cells["AA" + satir].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
+                                                ws.Cells["AB" + satir].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
 
-                                            //sayac++;
-                                            satir++;
+
+                                                //İlk Yarı Maç Sonucu
+                                                ws.Cells["AC" + satir].Value = detaylar.ARR[j].IYMS11;
+                                                ws.Cells["AD" + satir].Value = detaylar.ARR[j].IYMS10;
+                                                ws.Cells["AE" + satir].Value = detaylar.ARR[j].IYMS12;
+                                                ws.Cells["AF" + satir].Value = detaylar.ARR[j].IYMS01;
+                                                ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS00;
+                                                ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS02;
+                                                ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS21;
+                                                ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS20;
+                                                ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS22;
+
+                                                //sayac++;
+                                                satir++;
+
+
+                                            }
                                         }
                                     }
                                     catch
                                     {
-                                        /*
-                                        Console.WriteLine(e.Message);
+                                        
+                                        //Console.WriteLine(e.Message);
                                         Console.WriteLine("Excell'e Aktarılırken Bir Hata Oldu");
-                                        */
+                                        
                                     }
                                 }
                             }
