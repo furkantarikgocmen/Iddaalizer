@@ -145,6 +145,7 @@ namespace iddializer
                     .ToList()
                     .ForEach(d =>
                     {
+                        //Console.WriteLine(d.ToString("dd\\/MM\\/yyyy"));
                         
                         string tarih = d.ToString("dd\\/MM\\/yyyy");
                         string json = getData(tarih);
@@ -242,10 +243,22 @@ namespace iddializer
                                 }
                             }
                         }
-                    }); 
-                p.Save();
+                    });
+                Console.WriteLine("Veriler Kaydediliyor. Lütfen Bekleyiniz...");
+                try
+                {
+                    p.Save();
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                Console.WriteLine("Kayıt Tamamlandı!");
+                int kacmac = GetLastUsedRow(ws) - 2;
+                Console.WriteLine("Toplam Kayıtlı Maç Sayısı : " + Convert.ToString(kacmac));
+
+
             }
-            Console.WriteLine("End of the data");
             //Console.Write("Eklenen toplam maç sayısı : " + sayac);
 
             Console.ReadKey();
