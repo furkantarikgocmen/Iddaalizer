@@ -167,13 +167,22 @@ namespace iddializer
                                     {
                                         Console.WriteLine("Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
                                         System.Threading.Thread.Sleep(10000);
-                                        details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
-                                        detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
+                                        try
+                                        {
+                                            details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                            detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
+                                        }
+                                        catch
+                                        {
+                                            Console.WriteLine("Detaylar Patladı.");
+                                            break;
+                                        }
+                                        
                                     }
                                    
                                     try
                                     {
-                                        if (details != "") //else Basketbol Datası
+                                        if (details != "" && details != null) //else Basketbol Datası
                                         {
                                             for (int j = 0; j < detaylar.ARR.Count; j++)
                                             {
@@ -243,13 +252,25 @@ namespace iddializer
                                 }
                             }
                         }
+                        if(d.ToString("dd\\/MM\\/yyyy").Split('/')[0] == "28")
+                        {
+                            try
+                            {
+                                p.Save();
+                                Console.WriteLine("Ay Sonu Kaydı!");
+                            }
+                            catch
+                            {
+                                Console.WriteLine("Ay Sonu Kaydı Başarısız");
+                            }
+                        }
                     });
                 Console.WriteLine("Veriler Kaydediliyor. Lütfen Bekleyiniz...");
                 try
                 {
                     p.Save();
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
