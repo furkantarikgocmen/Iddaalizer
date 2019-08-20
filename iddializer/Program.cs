@@ -5,6 +5,7 @@ using RestSharp;
 using Newtonsoft.Json;
 using OfficeOpenXml;
 using System.IO;
+using System.Drawing;
 
 namespace iddializer
 {
@@ -136,9 +137,6 @@ namespace iddializer
                 else
                     satir = 3;
 
-                //int sayac;
-
-
                 Enumerable
                     .Range(0, days+1)
                     .Select(x => start.AddDays(x))
@@ -192,10 +190,28 @@ namespace iddializer
                                                 string ulke = ulkeler[9].Trim();
                                                 ulke = ulke.Replace("\"", "");
 
+                                                HANDİKAP handikap = JsonConvert.DeserializeObject<HANDİKAP>(Convert.ToString(datalist.m[i][15]));
+
                                                 ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
                                                 ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
-                                                ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
-                                                ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
+
+                                                if(handikap.h1 > 0) //Eğer 1.Takımın handikap değeri 0'dan büyükse
+                                                {
+                                                    ws.Cells["C" + satir].Value = "(h:" + handikap.h1 + ") " + detaylar.ARR[j].T1; //Takım 1 Handikap Değeri + Takım Adı
+                                                    ws.Cells["C" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                }
+                                                else
+                                                    ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+
+                                                if(handikap.h2 > 0)//Eğer 2.Takımın handikap değeri 0'dan büyükse
+                                                {
+                                                    ws.Cells["D" + satir].Value = detaylar.ARR[j].T2 + " (h:" + handikap.h2 + ")"; //Takım 2 Handikap Değeri + Takım Adı
+                                                    ws.Cells["D" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                }
+                                                else
+                                                    ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
+
+
                                                 ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
                                                 ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
                                                 ws.Cells["G" + satir].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
@@ -218,22 +234,34 @@ namespace iddializer
                                                 ws.Cells["X" + satir].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
                                                 ws.Cells["Y" + satir].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
 
-
+                                                //Handikap
                                                 ws.Cells["Z" + satir].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
                                                 ws.Cells["AA" + satir].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
                                                 ws.Cells["AB" + satir].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
 
+                                                if (detaylar.ARR[j].H1 == 1)
+                                                    ws.Cells["Z" + satir].Style.Font.Color.SetColor(Color.Red);
+
+                                                if (detaylar.ARR[j].H2 == 1)
+                                                    ws.Cells["AB" + satir].Style.Font.Color.SetColor(Color.Red);
+
+                                                //Toplam Gol
+                                                ws.Cells["AC" + satir].Value = detaylar.ARR[j].TG01;
+                                                ws.Cells["AD" + satir].Value = detaylar.ARR[j].TG23;
+                                                ws.Cells["AE" + satir].Value = detaylar.ARR[j].TG46;
+                                                ws.Cells["AF" + satir].Value = detaylar.ARR[j].TG7;
+
 
                                                 //İlk Yarı Maç Sonucu
-                                                ws.Cells["AC" + satir].Value = detaylar.ARR[j].IYMS11;
-                                                ws.Cells["AD" + satir].Value = detaylar.ARR[j].IYMS10;
-                                                ws.Cells["AE" + satir].Value = detaylar.ARR[j].IYMS12;
-                                                ws.Cells["AF" + satir].Value = detaylar.ARR[j].IYMS01;
-                                                ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS00;
-                                                ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS02;
-                                                ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS21;
-                                                ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS20;
-                                                ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS22;
+                                                ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS11;
+                                                ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS10;
+                                                ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS12;
+                                                ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS01;
+                                                ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS00;
+                                                ws.Cells["AL" + satir].Value = detaylar.ARR[j].IYMS02;
+                                                ws.Cells["AM" + satir].Value = detaylar.ARR[j].IYMS21;
+                                                ws.Cells["AN" + satir].Value = detaylar.ARR[j].IYMS20;
+                                                ws.Cells["AO" + satir].Value = detaylar.ARR[j].IYMS22;
 
                                                 //sayac++;
                                                 satir++;
@@ -280,10 +308,8 @@ namespace iddializer
 
 
             }
-            //Console.Write("Eklenen toplam maç sayısı : " + sayac);
 
             Console.ReadKey();
-
 
             string getData(string date)
             {
@@ -448,5 +474,18 @@ namespace iddializer
         public int eId { get; set; }
         public List<List<object>> m { get; set; }
         public string t { get; set; }
+    }
+
+    public class HANDİKAP
+    {
+        public int e { get; set; }
+        public string goal { get; set; }
+        public int h2 { get; set; }
+        public int h1 { get; set; }
+        public int k2 { get; set; }
+        public int k1 { get; set; }
+        public int aeleme { get; set; }
+        public int tId { get; set; }
+        public int ogd { get; set; }
     }
 }
