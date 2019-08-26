@@ -20,23 +20,26 @@ namespace iddializer
                 var ws = p.Workbook.Worksheets["BULTEN"]; //Excel dosyasında sayfa seç
                 DateTime bugun = DateTime.Now; //Bu günün tarihini al
 
+                logla("=====Transaction Is Starting=====");
+                logla("-**-Islem baslangici : " + bugun.ToString());
 
+                try
+                {
+                    if (ws.Cells["B" + 3].Value != null) // Eğer veri varsa son tarihi ekrana yazdır
+                        logla("-**-Son Alınan Tarih " + ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value); //
+                }
+                catch
+                {
+                    logla("-**-\'Data Dosyası Bulunamadı. Program Kapanıyor.\'");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
 
                 Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
                 Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 17/04/2004 tarihinden itibaren bütün veriler istenecektir");
                 Console.WriteLine("Örneğin : 9/7/2017");
                 string[] baslangicData;
-                try
-                {
-                    if (ws.Cells["B" + 3].Value != null) // Eğer veri varsa son tarihi ekrana yazdır
-                        Console.WriteLine("Son Alınan Tarih " + ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value); //
-                }
-                catch
-                {
-                    Console.WriteLine("\'Data Dosyası Bulunamadı. Program Kapanıyor.\'");
-                    Console.ReadKey();
-                    Environment.Exit(0);
-                }
+                
 
                 string baslangicKontrol = Console.ReadLine();
 
@@ -49,7 +52,8 @@ namespace iddializer
                         string sonBitisData = bugun.ToString(("dd'/'MM'/'yyyy"));
                         if (Convert.ToString(ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value) == sonBitisData)
                         {
-                            Console.WriteLine("Bu Gün Zaten Senkoronize Edilmiş. Program Kapatılıyor...");
+                            logla("-**-Baslanacak tarih : " + bugun.ToString());
+                            logla("-**-Bu Gün Zaten Senkoronize Edilmiş. Program Kapatılıyor...");
                             Console.ReadKey();
                             Environment.Exit(0);
                         }
@@ -62,16 +66,23 @@ namespace iddializer
                         DateTime yeniTarih = eskiTarih.AddDays(1);
                         string[] yeniGun = yeniTarih.ToString(("dd'/'MM'/'yyyy")).Split('/');
                         baslangicData = yeniGun;
+                        logla("-**-Baslanacak tarih (1 gün eklenmiştir): " + yeniTarih.ToString());
 
                     }
-                    else //Tabloda veri yoksa
+                    else//Tabloda veri yoksa
+                    {
                         baslangicData = "17/04/2004".Split('/'); //İlk veriyi çekmeye başla
+                        logla("-**-Baslanacak tarih : 17/04/2004");
+                    }
+                        
 
                 }
 
                 else //Veri girilmişse
                 {
                     baslangicData = baslangicKontrol.Split('/'); //Girilen veriyi diziye at
+
+                    logla("-**-Baslanacak tarih : " + baslangicKontrol);
 
                     //O tarih daha önce alınmış mı?
                     bool durum = true;
@@ -87,7 +98,7 @@ namespace iddializer
 
                     if (durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
                     {
-                        Console.WriteLine("Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
+                        logla("-**-Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -109,11 +120,14 @@ namespace iddializer
                 if (bitisKontrol == "") //Bitiş Tarihi Girilmemişse bugünkü veriye kadar al
                 {
                     bitisData = bugun.AddDays(-1).ToString(("dd'/'MM'/'yyyy")).Split('/'); //TODO Bu gün istenmeyebilir.
+
+                    logla("-**-Bitirilecek tarih : " + bugun.ToString());
                 }
                 else //Bitiş Tarihi girilmişse girilen tarih dahil tüm verileri al
                 {
                     bitisData = bitisKontrol.Split('/');
                     bitisData[0] = Convert.ToString(Convert.ToInt32(bitisData[0]));
+                    logla("-**-Bitirlecek tarih : " + bitisKontrol);
                 }
 
                 int bitisGun = Convert.ToInt32(bitisData[0]);
@@ -127,13 +141,13 @@ namespace iddializer
 
                 if (start > bugun)
                 {
-                    Console.WriteLine("Girilen Başlangıç Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    logla("-**-Girilen Başlangıç Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
                 if (end > bugun)
                 {
-                    Console.WriteLine("Girilen Bitiş Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    logla("-**-Girilen Bitiş Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
@@ -158,6 +172,8 @@ namespace iddializer
                         string json = getData(tarih);
                         if (json != "error" && json != "null")
                         {
+                            int macSayaci = 0;
+
                             Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
                             for (int i = 0; i < datalist.m.Count; i++)
                             {
@@ -174,7 +190,7 @@ namespace iddializer
                                     }
                                     catch
                                     {
-                                        Console.WriteLine("Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
+                                        logla("-**-Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
                                         System.Threading.Thread.Sleep(10000);
                                         try
                                         {
@@ -183,7 +199,7 @@ namespace iddializer
                                         }
                                         catch
                                         {
-                                            Console.WriteLine("Detaylar Patladı.");
+                                            logla("-**-Detaylar Patladı.");
                                             //break;
                                             failState = true;
                                         }
@@ -196,7 +212,8 @@ namespace iddializer
                                         {
                                             for (int j = 0; j < detaylar.ARR.Count; j++)
                                             {
-                                                Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
+                                                //Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
+                                                logla(datalist.m[i][35] + " : " + detaylar.ARR[0].T1 + " - " + detaylar.ARR[0].T2);
 
                                                 string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
                                                 string ulke = ulkeler[9].Trim();
@@ -229,7 +246,7 @@ namespace iddializer
                                                 }
                                                 catch
                                                 {
-                                                    Console.WriteLine("Handikaplar Patladı");
+                                                    logla("-**-Handikaplar Patladı");
                                                 }
 
 
@@ -325,6 +342,7 @@ namespace iddializer
 
                                                 //sayac++;
                                                 satir++;
+                                                macSayaci++;
 
                                             }
                                         }
@@ -333,37 +351,42 @@ namespace iddializer
                                     {
 
                                         //Console.WriteLine(e.Message);
-                                        Console.WriteLine("Excell ya da Parser Hatası");
+                                        logla("-**-Excell ya da Parser Hatası");
 
                                     }
                                 }
                             }
+                            logla("-**-Bu Gün Kaydedilen Toplam Maç : " + macSayaci.ToString());
                         }
                         if (d.ToString("dd\\/MM\\/yyyy").Split('/')[0] == "28")
                         {
                             try
                             {
                                 p.Save();
-                                Console.WriteLine("Ay Sonu Kaydı!");
+                                logla("Ay Sonu Kaydı!");
                             }
                             catch
                             {
-                                Console.WriteLine("Ay Sonu Kaydı Başarısız");
+                                logla("Ay Sonu Kaydı Başarısız");
                             }
                         }
                     });
-                Console.WriteLine("Veriler Kaydediliyor. Lütfen Bekleyiniz...");
+                logla("Veriler Kaydediliyor. Lütfen Bekleyiniz...");
                 try
                 {
                     p.Save();
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    logla(e.Message);
                 }
-                Console.WriteLine("Kayıt Tamamlandı!");
+                logla("Kayıt Tamamlandı!");
                 int kacmac = GetLastUsedRow(ws) - 2;
-                Console.WriteLine("Toplam Kayıtlı Maç Sayısı : " + Convert.ToString(kacmac));
+                logla("Toplam Kayıtlı Maç Sayısı : " + Convert.ToString(kacmac));
+
+                DateTime bitis = DateTime.Now; //Bu günün tarihini al
+                logla("-**-Islem bitisi : " + bitis.ToString());
+                logla("=====Transaction Is Finish=====");
 
 
             }
@@ -425,11 +448,12 @@ namespace iddializer
                 return row;
             }
 
-            public void logla(string log)
+            void logla(string log)
             {
                 try
                 {
-                    using (StreamWriter writer = new StreamWriter("output.txt"))
+                    //using (StreamWriter writer = new StreamWriter("output.txt"))
+                    using (StreamWriter writer = File.AppendText("log.txt"))
                     {
                         //writer.WriteLine("=====Transaction Is Starting=====");
                         writer.WriteLine(log);
