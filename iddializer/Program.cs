@@ -19,21 +19,30 @@ namespace iddializer
 
                 var ws = p.Workbook.Worksheets["BULTEN"]; //Excel dosyasında sayfa seç
                 DateTime bugun = DateTime.Now; //Bu günün tarihini al
-                
+
 
 
                 Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
                 Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 17/04/2004 tarihinden itibaren bütün veriler istenecektir");
                 Console.WriteLine("Örneğin : 9/7/2017");
                 string[] baslangicData;
-                if (ws.Cells["B" + 3].Value != null) // Eğer veri varsa son tarihi ekrana yazdır
-                    Console.WriteLine("Son Alınan Tarih " + ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value); //
+                try
+                {
+                    if (ws.Cells["B" + 3].Value != null) // Eğer veri varsa son tarihi ekrana yazdır
+                        Console.WriteLine("Son Alınan Tarih " + ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value); //
+                }
+                catch
+                {
+                    Console.WriteLine("\'Data Dosyası Bulunamadı. Program Kapanıyor.\'");
+                    Console.ReadKey();
+                    Environment.Exit(0);
+                }
 
                 string baslangicKontrol = Console.ReadLine();
 
                 if (baslangicKontrol == "") //Veri Girilmemişse
                 {
-                    if(ws.Cells["B" + 3].Value != null) //Tabloda Veri Varsa
+                    if (ws.Cells["B" + 3].Value != null) //Tabloda Veri Varsa
                     {
 
                         //Bu Gün Alınmış Mı?
@@ -47,7 +56,7 @@ namespace iddializer
 
 
                         baslangicData = Convert.ToString(ws.Cells["B" + GetLastUsedRow(ws)].Value).Split('/'); //Son eklenen verinin tarihini al
-                       
+
                         //Tarihi 1 artır
                         DateTime eskiTarih = new DateTime(Convert.ToInt32(baslangicData[2]), Convert.ToInt32(baslangicData[1]), Convert.ToInt32(baslangicData[0]));
                         DateTime yeniTarih = eskiTarih.AddDays(1);
@@ -65,25 +74,25 @@ namespace iddializer
                     baslangicData = baslangicKontrol.Split('/'); //Girilen veriyi diziye at
 
                     //O tarih daha önce alınmış mı?
-                    bool durum = true; 
+                    bool durum = true;
                     DateTime kontrol = new DateTime(Convert.ToInt32(baslangicKontrol.Split('/')[2]), Convert.ToInt32(baslangicKontrol.Split('/')[1]), Convert.ToInt32(baslangicKontrol.Split('/')[0]));
-                    for (int i = 3; i < GetLastUsedRow(ws)-4; i++)
+                    for (int i = 3; i < GetLastUsedRow(ws) - 4; i++)
                     {
-                        if(Convert.ToString(ws.Cells["B" + i].Value) == kontrol.ToString("dd\\/MM\\/yyyy"))
+                        if (Convert.ToString(ws.Cells["B" + i].Value) == kontrol.ToString("dd\\/MM\\/yyyy"))
                         {
                             durum = false;
                             break;
                         }
                     }
 
-                    if(durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
+                    if (durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
                     {
                         Console.WriteLine("Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
                 }
-                    
+
                 int baslangicGun = Convert.ToInt32(baslangicData[0]);
                 int baslangicAy = Convert.ToInt32(baslangicData[1]);
                 int baslangicYil = Convert.ToInt32(baslangicData[2]);
@@ -99,7 +108,7 @@ namespace iddializer
 
                 if (bitisKontrol == "") //Bitiş Tarihi Girilmemişse bugünkü veriye kadar al
                 {
-                    bitisData = bugun.ToString(("dd'/'MM'/'yyyy")).Split('/');
+                    bitisData = bugun.AddDays(-1).ToString(("dd'/'MM'/'yyyy")).Split('/'); //TODO Bu gün istenmeyebilir.
                 }
                 else //Bitiş Tarihi girilmişse girilen tarih dahil tüm verileri al
                 {
@@ -111,7 +120,7 @@ namespace iddializer
                 int bitisAy = Convert.ToInt32(bitisData[1]);
                 int bitisYil = Convert.ToInt32(bitisData[2]);
 
-                
+
                 DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
                 DateTime end = new DateTime(bitisYil, bitisAy, bitisGun);
                 int days = (end - start).Days;
@@ -138,13 +147,13 @@ namespace iddializer
                     satir = 3;
 
                 Enumerable
-                    .Range(0, days+1)
+                    .Range(0, days + 1)
                     .Select(x => start.AddDays(x))
                     .ToList()
                     .ForEach(d =>
                     {
                         //Console.WriteLine(d.ToString("dd\\/MM\\/yyyy"));
-                        
+
                         string tarih = d.ToString("dd\\/MM\\/yyyy");
                         string json = getData(tarih);
                         if (json != "error" && json != "null")
@@ -152,10 +161,12 @@ namespace iddializer
                             Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
                             for (int i = 0; i < datalist.m.Count; i++)
                             {
+                                bool failState = false;
+
                                 if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT")
                                 {
-                                    string details;
-                                    Detaylar detaylar;
+                                    string details = null;
+                                    Detaylar detaylar = null;
                                     try
                                     {
                                         details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
@@ -173,14 +184,15 @@ namespace iddializer
                                         catch
                                         {
                                             Console.WriteLine("Detaylar Patladı.");
-                                            break;
+                                            //break;
+                                            failState = true;
                                         }
-                                        
+
                                     }
-                                   
+
                                     try
                                     {
-                                        if (details != "" && details != null) //else Basketbol Datası
+                                        if (details != "" && details != null && failState != true) //else Basketbol Datası
                                         {
                                             for (int j = 0; j < detaylar.ARR.Count; j++)
                                             {
@@ -190,26 +202,35 @@ namespace iddializer
                                                 string ulke = ulkeler[9].Trim();
                                                 ulke = ulke.Replace("\"", "");
 
-                                                HANDİKAP handikap = JsonConvert.DeserializeObject<HANDİKAP>(Convert.ToString(datalist.m[i][15]));
+                                                
 
                                                 ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
                                                 ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
 
-                                                if(handikap.h1 > 0) //Eğer 1.Takımın handikap değeri 0'dan büyükse
+                                                try
                                                 {
-                                                    ws.Cells["C" + satir].Value = "(h:" + handikap.h1 + ") " + detaylar.ARR[j].T1; //Takım 1 Handikap Değeri + Takım Adı
-                                                    ws.Cells["C" + satir].Style.Font.Color.SetColor(Color.Red);
-                                                }
-                                                else
-                                                    ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+                                                    HANDİKAP handikap = JsonConvert.DeserializeObject<HANDİKAP>(Convert.ToString(datalist.m[i][15]));
 
-                                                if(handikap.h2 > 0)//Eğer 2.Takımın handikap değeri 0'dan büyükse
-                                                {
-                                                    ws.Cells["D" + satir].Value = detaylar.ARR[j].T2 + " (h:" + handikap.h2 + ")"; //Takım 2 Handikap Değeri + Takım Adı
-                                                    ws.Cells["D" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                    if (handikap.h1 > 0) //Eğer 1.Takımın handikap değeri 0'dan büyükse
+                                                    {
+                                                        ws.Cells["C" + satir].Value = "(h:" + handikap.h1 + ") " + detaylar.ARR[j].T1; //Takım 1 Handikap Değeri + Takım Adı
+                                                        ws.Cells["C" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                    }
+                                                    else
+                                                        ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+
+                                                    if (handikap.h2 > 0)//Eğer 2.Takımın handikap değeri 0'dan büyükse
+                                                    {
+                                                        ws.Cells["D" + satir].Value = detaylar.ARR[j].T2 + " (h:" + handikap.h2 + ")"; //Takım 2 Handikap Değeri + Takım Adı
+                                                        ws.Cells["D" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                    }
+                                                    else
+                                                        ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
                                                 }
-                                                else
-                                                    ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
+                                                catch
+                                                {
+                                                    Console.WriteLine("Handikaplar Patladı");
+                                                }
 
 
                                                 ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
@@ -263,24 +284,62 @@ namespace iddializer
                                                 ws.Cells["AN" + satir].Value = detaylar.ARR[j].IYMS20;
                                                 ws.Cells["AO" + satir].Value = detaylar.ARR[j].IYMS22;
 
+
+                                                //Maç Skoru
+                                                ws.Cells["AP" + satir].Value = detaylar.ARR[j].SK10;
+                                                ws.Cells["AQ" + satir].Value = detaylar.ARR[j].SK20;
+                                                ws.Cells["AR" + satir].Value = detaylar.ARR[j].SK21;
+                                                ws.Cells["AS" + satir].Value = detaylar.ARR[j].SK30;
+                                                ws.Cells["AT" + satir].Value = detaylar.ARR[j].SK31;
+                                                ws.Cells["AU" + satir].Value = detaylar.ARR[j].SK32;
+                                                ws.Cells["AV" + satir].Value = detaylar.ARR[j].SK40;
+                                                ws.Cells["AW" + satir].Value = detaylar.ARR[j].SK41;
+                                                ws.Cells["AX" + satir].Value = detaylar.ARR[j].SK42;
+                                                ws.Cells["AY" + satir].Value = detaylar.ARR[j].SK43;
+                                                ws.Cells["AZ" + satir].Value = detaylar.ARR[j].SK50;
+                                                ws.Cells["BA" + satir].Value = detaylar.ARR[j].SK51;
+                                                ws.Cells["BB" + satir].Value = detaylar.ARR[j].SK52;
+                                                ws.Cells["BC" + satir].Value = detaylar.ARR[j].SK53;
+                                                ws.Cells["BD" + satir].Value = detaylar.ARR[j].SK54;
+                                                ws.Cells["BE" + satir].Value = detaylar.ARR[j].SK00;
+                                                ws.Cells["BF" + satir].Value = detaylar.ARR[j].SK11;
+                                                ws.Cells["BG" + satir].Value = detaylar.ARR[j].SK22;
+                                                ws.Cells["BH" + satir].Value = detaylar.ARR[j].SK33;
+                                                ws.Cells["BI" + satir].Value = detaylar.ARR[j].SK44;
+                                                ws.Cells["BJ" + satir].Value = detaylar.ARR[j].SK55;
+                                                ws.Cells["BK" + satir].Value = detaylar.ARR[j].SK01;
+                                                ws.Cells["BL" + satir].Value = detaylar.ARR[j].SK02;
+                                                ws.Cells["BM" + satir].Value = detaylar.ARR[j].SK12;
+                                                ws.Cells["BN" + satir].Value = detaylar.ARR[j].SK03;
+                                                ws.Cells["BO" + satir].Value = detaylar.ARR[j].SK13;
+                                                ws.Cells["BP" + satir].Value = detaylar.ARR[j].SK23;
+                                                ws.Cells["BQ" + satir].Value = detaylar.ARR[j].SK04;
+                                                ws.Cells["BR" + satir].Value = detaylar.ARR[j].SK14;
+                                                ws.Cells["BS" + satir].Value = detaylar.ARR[j].SK24;
+                                                ws.Cells["BT" + satir].Value = detaylar.ARR[j].SK34;
+                                                ws.Cells["BU" + satir].Value = detaylar.ARR[j].SK05;
+                                                ws.Cells["BV" + satir].Value = detaylar.ARR[j].SK15;
+                                                ws.Cells["BW" + satir].Value = detaylar.ARR[j].SK25;
+                                                ws.Cells["BX" + satir].Value = detaylar.ARR[j].SK35;
+                                                ws.Cells["BY" + satir].Value = detaylar.ARR[j].SK45;
+
                                                 //sayac++;
                                                 satir++;
-
 
                                             }
                                         }
                                     }
                                     catch
                                     {
-                                        
+
                                         //Console.WriteLine(e.Message);
-                                        Console.WriteLine("Excell'e Aktarılırken Bir Hata Oldu");
-                                        
+                                        Console.WriteLine("Excell ya da Parser Hatası");
+
                                     }
                                 }
                             }
                         }
-                        if(d.ToString("dd\\/MM\\/yyyy").Split('/')[0] == "28")
+                        if (d.ToString("dd\\/MM\\/yyyy").Split('/')[0] == "28")
                         {
                             try
                             {
@@ -321,7 +380,7 @@ namespace iddializer
                 request.AddHeader("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36");
                 IRestResponse response = client.Execute(request);
 
-                if(response.Content == "")
+                if (response.Content == "")
                 {
                     return "error";
                 }
@@ -365,9 +424,26 @@ namespace iddializer
                 }
                 return row;
             }
+
+            public void logla(string log)
+            {
+                try
+                {
+                    using (StreamWriter writer = new StreamWriter("output.txt"))
+                    {
+                        //writer.WriteLine("=====Transaction Is Starting=====");
+                        writer.WriteLine(log);
+                        Console.WriteLine(log);
+                    }
+                }
+                catch
+                {
+                    Console.WriteLine("Logla Fonksiyonu Patladı");
+                }
+            }
         }
 
-        
+
     }
 
     public class ARR
