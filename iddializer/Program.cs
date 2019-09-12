@@ -30,16 +30,15 @@ namespace iddializer
                 }
                 catch
                 {
-                    logla("-**-\'Data Dosyası Bulunamadı. Program Kapanıyor.\'");
+                    logla("-!!-\'Data Dosyası Bulunamadı. Program Kapanıyor.\'");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
 
                 Console.WriteLine("Lütfen Verinin Alınmaya Başlayacağı Tarihi G/A/YYYY Şeklinde Girin");
-                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 17/04/2004 tarihinden itibaren bütün veriler istenecektir");
+                Console.WriteLine("Boş Bırakmanız durumunda tablo kontrol edilecektir. Tablo boşsa 29/08/2019 tarihinden itibaren bütün veriler istenecektir");
                 Console.WriteLine("Örneğin : 9/7/2017");
                 string[] baslangicData;
-                
 
                 string baslangicKontrol = Console.ReadLine();
 
@@ -53,7 +52,7 @@ namespace iddializer
                         if (Convert.ToString(ws.Cells["B" + Convert.ToString(GetLastUsedRow(ws))].Value) == sonBitisData)
                         {
                             logla("-**-Baslanacak tarih : " + bugun.ToString());
-                            logla("-**-Bu Gün Zaten Senkoronize Edilmiş. Program Kapatılıyor...");
+                            logla("-!!-Bu Gün Zaten Senkoronize Edilmiş. Program Kapatılıyor...");
                             Console.ReadKey();
                             Environment.Exit(0);
                         }
@@ -71,10 +70,9 @@ namespace iddializer
                     }
                     else//Tabloda veri yoksa
                     {
-                        baslangicData = "17/04/2004".Split('/'); //İlk veriyi çekmeye başla
-                        logla("-**-Baslanacak tarih : 17/04/2004");
+                        baslangicData = "29/08/2019".Split('/'); //İlk veriyi çekmeye başla
+                        logla("-**-Baslanacak tarih : 29/08/2019");
                     }
-                        
 
                 }
 
@@ -98,7 +96,7 @@ namespace iddializer
 
                     if (durum != true) //Daha önce alınmış bir veri girildiyse programı kapat
                     {
-                        logla("-**-Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
+                        logla("-!!-Bu Tarihteki Data Daha Önce Alınmış. Program Kapatmak için bir tuşa basın.");
                         Console.ReadKey();
                         Environment.Exit(0);
                     }
@@ -107,7 +105,6 @@ namespace iddializer
                 int baslangicGun = Convert.ToInt32(baslangicData[0]);
                 int baslangicAy = Convert.ToInt32(baslangicData[1]);
                 int baslangicYil = Convert.ToInt32(baslangicData[2]);
-
 
                 //Bitiş Tarihi
                 Console.WriteLine("Lütfen Verinin Alınmaya Durdurulacağı Tarihi G/A/YYYY Şeklinde Girin");
@@ -121,7 +118,7 @@ namespace iddializer
                 {
                     bitisData = bugun.AddDays(-1).ToString(("dd'/'MM'/'yyyy")).Split('/'); //TODO Bu gün istenmeyebilir.
 
-                    logla("-**-Bitirilecek tarih : " + bugun.ToString());
+                    logla("-**-Bitirilecek tarih : " + bugun.AddDays(-1).ToString("dd'/'MM'/'yyyy")); //bitisdata alınabilir bugun.ToString()
                 }
                 else //Bitiş Tarihi girilmişse girilen tarih dahil tüm verileri al
                 {
@@ -134,20 +131,19 @@ namespace iddializer
                 int bitisAy = Convert.ToInt32(bitisData[1]);
                 int bitisYil = Convert.ToInt32(bitisData[2]);
 
-
                 DateTime start = new DateTime(baslangicYil, baslangicAy, baslangicGun);
                 DateTime end = new DateTime(bitisYil, bitisAy, bitisGun);
                 int days = (end - start).Days;
 
                 if (start > bugun)
                 {
-                    logla("-**-Girilen Başlangıç Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    logla("-!!-Girilen Başlangıç Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
                 if (end > bugun)
                 {
-                    logla("-**-Girilen Bitiş Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
+                    logla("-!!-Girilen Bitiş Tarihi, Bu Günün Tarihinden Büyüktü. Program Kapatılıyor...");
                     Console.ReadKey();
                     Environment.Exit(0);
                 }
@@ -174,32 +170,34 @@ namespace iddializer
                         {
                             int macSayaci = 0;
 
-                            Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json);
+                            Maclar datalist = JsonConvert.DeserializeObject<Maclar>(json); //gun datası convert to obj
                             for (int i = 0; i < datalist.m.Count; i++)
                             {
+
                                 bool failState = false;
 
-                                if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT")
+                                if (Convert.ToString(datalist.m[i][14]) != "0" && Convert.ToString(datalist.m[i][6]) != "ERT" && Convert.ToString(datalist.m[i][23]) != "2") //iddia ve ertelenmemiş
                                 {
+
                                     string details = null;
                                     Detaylar detaylar = null;
                                     try
                                     {
-                                        details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                        details = getDetails(Convert.ToString(datalist.m[i][0]));
                                         detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
                                     }
                                     catch
                                     {
-                                        logla("-**-Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
+                                        logla("-!!-Detaylar Servisine Erişilemedi. 10 Saniye Sonra Tekrar Denenecek");
                                         System.Threading.Thread.Sleep(10000);
                                         try
                                         {
-                                            details = getDetails(Convert.ToString(datalist.m[i][0]), Convert.ToString(datalist.m[i][14]));
+                                            details = getDetails(Convert.ToString(datalist.m[i][0]));
                                             detaylar = JsonConvert.DeserializeObject<Detaylar>(details);
                                         }
                                         catch
                                         {
-                                            logla("-**-Detaylar Patladı.");
+                                            logla("-!!-Detaylar Alınamadı.");
                                             //break;
                                             failState = true;
                                         }
@@ -208,152 +206,59 @@ namespace iddializer
 
                                     try
                                     {
-                                        if (details != "" && details != null && failState != true) //else Basketbol Datası
+                                        if (details != "" && details != null && failState != true) //else Basketbol Datası or error
                                         {
-                                            for (int j = 0; j < detaylar.ARR.Count; j++)
+                                            //Console.WriteLine("{0} : {1} - {2} === {3}", datalist.m[i][35], datalist.m[i][2], datalist.m[i][4], datalist.m[i][0]);
+                                            logla(datalist.m[i][35] + " : " + datalist.m[i][2] + " - " + datalist.m[i][4]);
+
+                                            for (int j = 0; j < detaylar.Event.Markets.Count; j++)
                                             {
-                                                //Console.WriteLine("{0} : {1} - {2}", datalist.m[i][35], detaylar.ARR[0].T1, detaylar.ARR[0].T2);
-                                                logla(datalist.m[i][35] + " : " + detaylar.ARR[0].T1 + " - " + detaylar.ARR[0].T2);
-
-                                                string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
-                                                string ulke = ulkeler[9].Trim();
-                                                ulke = ulke.Replace("\"", "");
-
-                                                
-
-                                                ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
-                                                ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
 
                                                 try
                                                 {
-                                                    HANDİKAP handikap = JsonConvert.DeserializeObject<HANDİKAP>(Convert.ToString(datalist.m[i][15]));
-
-                                                    if (handikap.h1 > 0) //Eğer 1.Takımın handikap değeri 0'dan büyükse
+                                                    for (int w = 0; w < detaylar.Event.Markets[j].Outcomes.Count; w++)
                                                     {
-                                                        ws.Cells["C" + satir].Value = "(h:" + handikap.h1 + ") " + detaylar.ARR[j].T1; //Takım 1 Handikap Değeri + Takım Adı
-                                                        ws.Cells["C" + satir].Style.Font.Color.SetColor(Color.Red);
-                                                    }
-                                                    else
-                                                        ws.Cells["C" + satir].Value = detaylar.ARR[j].T1; //Takım 1
+                                                        string column = getColumn(detaylar.Event.Markets[j].Name);
 
-                                                    if (handikap.h2 > 0)//Eğer 2.Takımın handikap değeri 0'dan büyükse
-                                                    {
-                                                        ws.Cells["D" + satir].Value = detaylar.ARR[j].T2 + " (h:" + handikap.h2 + ")"; //Takım 2 Handikap Değeri + Takım Adı
-                                                        ws.Cells["D" + satir].Style.Font.Color.SetColor(Color.Red);
+                                                        if ( column == "unkown")
+                                                            break;
+                                                        string[] kolonlar = column.Split(',');
+
+                                                        string kolon = kolonlar[w];
+
+                                                        string outcome = Convert.ToString(detaylar.Event.Markets[j].Outcomes[w].Odd);
+
+                                                        ws.Cells[kolon + satir].Value = outcome;
                                                     }
-                                                    else
-                                                        ws.Cells["D" + satir].Value = detaylar.ARR[j].T2; //Takım 2
                                                 }
                                                 catch
                                                 {
-                                                    logla("-**-Handikaplar Patladı");
+                                                    logla("---!!GetColumn fonksiyonundan gelen dizi uzunluğu, Outcomes uzunluğudnan düşük.Dizi Belirlenen Aralığın Dışındaydı");
                                                 }
-
-
-                                                ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
-                                                ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
-                                                ws.Cells["G" + satir].Value = detaylar.ARR[j].MS1; //Maç Sonucu 1
-                                                ws.Cells["H" + satir].Value = detaylar.ARR[j].MS0; //Maç Sonucu x
-                                                ws.Cells["I" + satir].Value = detaylar.ARR[j].MS2; //Maç Sonucu 2
-                                                ws.Cells["J" + satir].Value = detaylar.ARR[j].IY1; //İlk Yarı Sonucu 1
-                                                ws.Cells["K" + satir].Value = detaylar.ARR[j].IY0; //İlk Yarı Sonucu x
-                                                ws.Cells["L" + satir].Value = detaylar.ARR[j].IY2; //İlk Yarı Sonucu 2
-                                                ws.Cells["M" + satir].Value = detaylar.ARR[j].IYA15; //İlk Yarı 1.5 Alt
-                                                ws.Cells["N" + satir].Value = detaylar.ARR[j].IYU15; //İlk Yarı 1.5 Üst
-                                                ws.Cells["O" + satir].Value = detaylar.ARR[j].A15; //Maç Sonucu Alt Üst 1.5 Alt
-                                                ws.Cells["P" + satir].Value = detaylar.ARR[j].U15; //Maç Sonucu Alt Üst 1.5 Üst
-                                                ws.Cells["Q" + satir].Value = detaylar.ARR[j].A; //Maç Sonucu Alt Üst 2.5 Alt
-                                                ws.Cells["R" + satir].Value = detaylar.ARR[j].U; //Maç Sonucu Alt Üst 2.5 Üst
-                                                ws.Cells["S" + satir].Value = detaylar.ARR[j].A35; //Maç Sonucu Alt Üst 3.5 Alt
-                                                ws.Cells["T" + satir].Value = detaylar.ARR[j].U35; //Maç Sonucu Alt Üst 3.5 Üst
-                                                ws.Cells["U" + satir].Value = detaylar.ARR[j].KGVAR; //Karşılıklı Gol Var
-                                                ws.Cells["V" + satir].Value = detaylar.ARR[j].KGYOK; //Karşılıklı Gol Yok
-                                                ws.Cells["W" + satir].Value = detaylar.ARR[j].CS10; //Çifte Şans 1-0
-                                                ws.Cells["X" + satir].Value = detaylar.ARR[j].CS12; //Çİfte ŞAns 1-2
-                                                ws.Cells["Y" + satir].Value = detaylar.ARR[j].CS02; //Çifte Şans 0-2
-
-                                                //Handikap
-                                                ws.Cells["Z" + satir].Value = detaylar.ARR[j].HMS1; //Handikaplı Maç Sonucu 1
-                                                ws.Cells["AA" + satir].Value = detaylar.ARR[j].HMS0; //Handikaplı Maç Sonucu x //Handikaplı Takım Gözükecek mi?
-                                                ws.Cells["AB" + satir].Value = detaylar.ARR[j].HMS2; // Handikaplı Maç Sonucu 2
-
-                                                if (detaylar.ARR[j].H1 == 1)
-                                                    ws.Cells["Z" + satir].Style.Font.Color.SetColor(Color.Red);
-
-                                                if (detaylar.ARR[j].H2 == 1)
-                                                    ws.Cells["AB" + satir].Style.Font.Color.SetColor(Color.Red);
-
-                                                //Toplam Gol
-                                                ws.Cells["AC" + satir].Value = detaylar.ARR[j].TG01;
-                                                ws.Cells["AD" + satir].Value = detaylar.ARR[j].TG23;
-                                                ws.Cells["AE" + satir].Value = detaylar.ARR[j].TG46;
-                                                ws.Cells["AF" + satir].Value = detaylar.ARR[j].TG7;
-
-
-                                                //İlk Yarı Maç Sonucu
-                                                ws.Cells["AG" + satir].Value = detaylar.ARR[j].IYMS11;
-                                                ws.Cells["AH" + satir].Value = detaylar.ARR[j].IYMS10;
-                                                ws.Cells["AI" + satir].Value = detaylar.ARR[j].IYMS12;
-                                                ws.Cells["AJ" + satir].Value = detaylar.ARR[j].IYMS01;
-                                                ws.Cells["AK" + satir].Value = detaylar.ARR[j].IYMS00;
-                                                ws.Cells["AL" + satir].Value = detaylar.ARR[j].IYMS02;
-                                                ws.Cells["AM" + satir].Value = detaylar.ARR[j].IYMS21;
-                                                ws.Cells["AN" + satir].Value = detaylar.ARR[j].IYMS20;
-                                                ws.Cells["AO" + satir].Value = detaylar.ARR[j].IYMS22;
-
-
-                                                //Maç Skoru
-                                                ws.Cells["AP" + satir].Value = detaylar.ARR[j].SK10;
-                                                ws.Cells["AQ" + satir].Value = detaylar.ARR[j].SK20;
-                                                ws.Cells["AR" + satir].Value = detaylar.ARR[j].SK21;
-                                                ws.Cells["AS" + satir].Value = detaylar.ARR[j].SK30;
-                                                ws.Cells["AT" + satir].Value = detaylar.ARR[j].SK31;
-                                                ws.Cells["AU" + satir].Value = detaylar.ARR[j].SK32;
-                                                ws.Cells["AV" + satir].Value = detaylar.ARR[j].SK40;
-                                                ws.Cells["AW" + satir].Value = detaylar.ARR[j].SK41;
-                                                ws.Cells["AX" + satir].Value = detaylar.ARR[j].SK42;
-                                                ws.Cells["AY" + satir].Value = detaylar.ARR[j].SK43;
-                                                ws.Cells["AZ" + satir].Value = detaylar.ARR[j].SK50;
-                                                ws.Cells["BA" + satir].Value = detaylar.ARR[j].SK51;
-                                                ws.Cells["BB" + satir].Value = detaylar.ARR[j].SK52;
-                                                ws.Cells["BC" + satir].Value = detaylar.ARR[j].SK53;
-                                                ws.Cells["BD" + satir].Value = detaylar.ARR[j].SK54;
-                                                ws.Cells["BE" + satir].Value = detaylar.ARR[j].SK00;
-                                                ws.Cells["BF" + satir].Value = detaylar.ARR[j].SK11;
-                                                ws.Cells["BG" + satir].Value = detaylar.ARR[j].SK22;
-                                                ws.Cells["BH" + satir].Value = detaylar.ARR[j].SK33;
-                                                ws.Cells["BI" + satir].Value = detaylar.ARR[j].SK44;
-                                                ws.Cells["BJ" + satir].Value = detaylar.ARR[j].SK55;
-                                                ws.Cells["BK" + satir].Value = detaylar.ARR[j].SK01;
-                                                ws.Cells["BL" + satir].Value = detaylar.ARR[j].SK02;
-                                                ws.Cells["BM" + satir].Value = detaylar.ARR[j].SK12;
-                                                ws.Cells["BN" + satir].Value = detaylar.ARR[j].SK03;
-                                                ws.Cells["BO" + satir].Value = detaylar.ARR[j].SK13;
-                                                ws.Cells["BP" + satir].Value = detaylar.ARR[j].SK23;
-                                                ws.Cells["BQ" + satir].Value = detaylar.ARR[j].SK04;
-                                                ws.Cells["BR" + satir].Value = detaylar.ARR[j].SK14;
-                                                ws.Cells["BS" + satir].Value = detaylar.ARR[j].SK24;
-                                                ws.Cells["BT" + satir].Value = detaylar.ARR[j].SK34;
-                                                ws.Cells["BU" + satir].Value = detaylar.ARR[j].SK05;
-                                                ws.Cells["BV" + satir].Value = detaylar.ARR[j].SK15;
-                                                ws.Cells["BW" + satir].Value = detaylar.ARR[j].SK25;
-                                                ws.Cells["BX" + satir].Value = detaylar.ARR[j].SK35;
-                                                ws.Cells["BY" + satir].Value = detaylar.ARR[j].SK45;
-
-                                                //sayac++;
-                                                satir++;
-                                                macSayaci++;
-
                                             }
+                                            string[] ulkeler = Convert.ToString(datalist.m[i][36]).Split(',');
+                                            string ulke = ulkeler[9].Trim();
+                                            ulke = ulke.Replace("\"", "");
+
+                                            ws.Cells["A" + satir].Value = ulke;//[36][9] Ülke
+                                            ws.Cells["B" + satir].Value = datalist.m[i][35]; //tarih VE SAAT
+                                            ws.Cells["C" + satir].Value = datalist.m[i][2];
+                                            ws.Cells["D" + satir].Value = datalist.m[i][4];
+
+                                            ws.Cells["E" + satir].Value = datalist.m[i][12] + "-" + datalist.m[i][13]; //Maç Sonucu
+                                            ws.Cells["F" + satir].Value = datalist.m[i][7]; //İlk Yarı
+
+                                            satir++;
+                                            macSayaci++;
+
                                         }
                                     }
-                                    catch
+                                    catch (Exception e)
                                     {
-
-                                        //Console.WriteLine(e.Message);
-                                        logla("-**-Excell ya da Parser Hatası");
-
+                                        logla("-!!-Excell ya da Parser Hatası");
+                                        logla(e.Message);
                                     }
+
                                 }
                             }
                             logla("-**-Bu Gün Kaydedilen Toplam Maç : " + macSayaci.ToString());
@@ -363,35 +268,232 @@ namespace iddializer
                             try
                             {
                                 p.Save();
-                                logla("Ay Sonu Kaydı!");
+                                logla("--**-Ay Sonu Kaydı!");
                             }
                             catch
                             {
-                                logla("Ay Sonu Kaydı Başarısız");
+                                logla("--!!--Ay Sonu Kaydı Başarısız");
                             }
                         }
                     });
-                logla("Veriler Kaydediliyor. Lütfen Bekleyiniz...");
+                logla("--**--Veriler Kaydediliyor. Lütfen Bekleyiniz...");
                 try
                 {
-                    p.Save();
+                    //p.Save();
                 }
                 catch (Exception e)
                 {
                     logla(e.Message);
                 }
-                logla("Kayıt Tamamlandı!");
+                logla("--**--Kayıt Tamamlandı");
                 int kacmac = GetLastUsedRow(ws) - 2;
-                logla("Toplam Kayıtlı Maç Sayısı : " + Convert.ToString(kacmac));
+                logla("--**--Toplam Kayıtlı Maç Sayısı : " + Convert.ToString(kacmac));
 
                 DateTime bitis = DateTime.Now; //Bu günün tarihini al
                 logla("-**-Islem bitisi : " + bitis.ToString());
                 logla("=====Transaction Is Finish=====");
 
-
             }
 
-            Console.ReadKey();
+            Console.ReadKey(); //System.enviroment.exit(0) olabilir?
+
+            string getColumn(string name)
+            {
+                string column = "";
+                switch (name)
+                {
+                    case "Maç Sonucu":
+                        column = "G,H,I";
+                        break;
+                    case "Çifte Şans"://3
+                        column = "AP,AQ,AR";
+                        break;
+                    case "Handikaplı Maç Sonucu (0:2)"://3 //yok
+                        column = "unkown";
+                        break;
+                    case "Handikaplı Maç Sonucu (0:1)"://3 //yok
+                        column = "unkown";
+                        break;
+                    case "Handikaplı Maç Sonucu (1:0)"://3 //yok
+                        column = "unkown";
+                        break;
+                    case "Handikaplı Maç Sonucu (2:0)"://3 //yok
+                        column = "unkown";
+                        break;
+                    case "İlk Yarı/Maç Sonucu"://9
+                        column = "AY,AZ,BA,BB,BC,BD,BE,BF,BG";
+                        break;
+                    case "Maç Sonucu ve (1,5) Alt/Üst"://6 //yok
+                        column = "unkown";
+                        break;
+                    case "Maç Sonucu ve (2,5) Alt/Üst"://6 //bunlardan birini incele //yok
+                        column = "unkown";
+                        break;
+                    case "Maç Sonucu ve (3,5) Alt/Üst"://6 //yok
+                        column = "unkown";
+                        break;
+                    case "Maç Sonucu ve (4,5) Alt/Üst"://6 //yok
+                        column = "unkown";
+                        break;
+                    case "İlk Gol"://3 //yok //bak buna
+                        column = "unkown";
+                        break;
+                    case "0,5 Alt/Üst"://2
+                        column = "Z,AA";
+                        break;
+                    case "1,5 Alt/Üst"://2
+                        column = "AB,AC";
+                        break;
+                    case "2,5 Alt/Üst"://2
+                        column = "AD,AE";
+                        break;
+                    case "3,5 Alt/Üst"://2
+                        column = "AF,AG";
+                        break;
+                    case "4,5 Alt/Üst"://2
+                        column = "AH,AI";
+                        break;
+                    case "5,5 Alt/Üst"://2 
+                        column = "AJ,AK";
+                        break;
+                    case "6,5 Alt/Üst"://2
+                        column = "AL,AM";
+                        break;
+                    case "Karşılıklı Gol"://2
+                        column = "AN,AO";
+                        break;
+                    case "Toplam Gol Aralığı"://4
+                        column = "P,Q,R,S";
+                        break;
+                    case "1. Yarı Sonucu"://3
+                        column = "J,K,L";
+                        break;
+                    case "1. Yarı Çifte Şans"://3
+                        column = "AS,AT,AU";
+                        break;
+                    case "2. Yarı Sonucu"://3
+                        column = "M,N,O";
+                        break;
+                    case "1. Yarı 0,5 Alt/Üst"://2
+                        column = "T,U";
+                        break;
+                    case "1. Yarı 1,5 Alt/Üst"://2
+                        column = "V,W";
+                        break;
+                    case "1. Yarı 2,5 Alt/Üst"://2
+                        column = "X,Y";
+                        break;
+                    case "Evsahibi 0,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Evsahibi 1,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Evsahibi 2,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Deplasman 0,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Deplasman 1,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Deplasman 2,5 Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Tek/Çift"://2 //bunu da vermiyorum
+                        column = "unkown";
+                        break;
+                    case "Maç Skoru"://29 //bunu vermiyorum
+                        column = "unkown";
+                        break;
+                    case "Evsahibi Gol Yemeden Kazanır"://2
+                        column = "unkown";
+                        break;
+                    case "Deplasman Gol Yemeden Kazanır"://2
+                        column = "unkown";
+                        break;
+                    case "Gol Atacak Takımlar"://4
+                        column = "unkown";
+                        break;
+                    case "Daha Çok Gol Olacak Yarı"://3
+                        column = "unkown";
+                        break;
+                    case "Evsahibi Gol Yemez"://2
+                        column = "unkown";
+                        break;
+                    case "Deplasman Gol Yemez"://2
+                        column = "unkown";
+                        break;
+                    case "(8,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(9,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(10,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(11,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(12,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "1.Yarı (4,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "1.Yarı (5,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "1.Yarı (6,5) Korner Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "En Çok Korner"://3
+                        column = "unkown";
+                        break;
+                    case "1. Yarı En Çok Korner"://3 //bundan iki tane var
+                        column = "unkown";
+                        break;
+                    case "İlk Korner"://3
+                        column = "unkown";
+                        break;
+                    case "(1,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(2,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(3,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(4,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(5,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(6,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "(7,5) Kart Alt/Üst"://2
+                        column = "unkown";
+                        break;
+                    case "Kırmızı Kart"://2
+                        column = "unkown";
+                        break;
+                    case "Uzatma Oynanır":// bilmiyorum bak buna
+                        column = "unkown";
+                        break;
+                    case "1. Yarı Toplam Gol Sayısı"://3
+                        column = "BH,BI,BJ";
+                        break;
+                    default:
+                        column = "unkown";
+                        break;
+                }
+                return column;
+            }
 
             string getData(string date)
             {
@@ -411,10 +513,10 @@ namespace iddializer
                     return response.Content;
             }
 
-            string getDetails(string macid, string iddaaid)
+            string getDetails(string macid)
             {
 
-                var client = new RestClient("http://arsiv.mackolik.com/AjaxHandlers/IddaaHandler.aspx?command=morebets&mac=" + macid + "&iddaaId=" + iddaaid);
+                var client = new RestClient("http://arsiv.mackolik.com/AjaxHandlers/IddaaHandler.aspx?command=morebets&mac=" + macid);
                 var request = new RestRequest(Method.GET);
                 request.AddHeader("accept", "text/plain, */*; q=0.01");
                 request.AddHeader("accept-encoding", "gzip, deflate");
@@ -430,7 +532,6 @@ namespace iddializer
                 IRestResponse response = client.Execute(request);
 
                 return response.Content;
-
             }
 
             int GetLastUsedRow(ExcelWorksheet sheet)
@@ -462,110 +563,11 @@ namespace iddializer
                 }
                 catch
                 {
-                    Console.WriteLine("Logla Fonksiyonu Patladı");
+                    Console.WriteLine("--!!--Logla Fonksiyonu Hatası");
                 }
             }
         }
 
-
-    }
-
-    public class ARR
-    {
-        public string Type { get; set; }
-        public int MID { get; set; }
-        public int ID { get; set; }
-        public int H1 { get; set; }
-        public int H2 { get; set; }
-        public string T1 { get; set; }
-        public string T2 { get; set; }
-        public int T1I { get; set; }
-        public int T2I { get; set; }
-        public int MB { get; set; }
-        public int MD { get; set; }
-        public string MS1 { get; set; }
-        public string MS0 { get; set; }
-        public string MS2 { get; set; }
-        public string CS10 { get; set; }
-        public string CS12 { get; set; }
-        public string CS02 { get; set; }
-        public string IY1 { get; set; }
-        public string IY0 { get; set; }
-        public string IY2 { get; set; }
-        public string A { get; set; }
-        public string U { get; set; }
-        public string IYMS11 { get; set; }
-        public string IYMS10 { get; set; }
-        public string IYMS12 { get; set; }
-        public string IYMS01 { get; set; }
-        public string IYMS00 { get; set; }
-        public string IYMS02 { get; set; }
-        public string IYMS21 { get; set; }
-        public string IYMS20 { get; set; }
-        public string IYMS22 { get; set; }
-        public string TG01 { get; set; }
-        public string TG23 { get; set; }
-        public string TG46 { get; set; }
-        public string TG7 { get; set; }
-        public string HMS1 { get; set; }
-        public string HMS0 { get; set; }
-        public string HMS2 { get; set; }
-        public string KGVAR { get; set; }
-        public string KGYOK { get; set; }
-        public string SK00 { get; set; }
-        public string SK01 { get; set; }
-        public string SK02 { get; set; }
-        public string SK03 { get; set; }
-        public string SK04 { get; set; }
-        public string SK05 { get; set; }
-        public string SK10 { get; set; }
-        public string SK11 { get; set; }
-        public string SK12 { get; set; }
-        public string SK13 { get; set; }
-        public string SK14 { get; set; }
-        public string SK15 { get; set; }
-        public string SK20 { get; set; }
-        public string SK21 { get; set; }
-        public string SK22 { get; set; }
-        public string SK23 { get; set; }
-        public string SK24 { get; set; }
-        public string SK25 { get; set; }
-        public string SK30 { get; set; }
-        public string SK31 { get; set; }
-        public string SK32 { get; set; }
-        public string SK33 { get; set; }
-        public string SK34 { get; set; }
-        public string SK35 { get; set; }
-        public string SK40 { get; set; }
-        public string SK41 { get; set; }
-        public string SK42 { get; set; }
-        public string SK43 { get; set; }
-        public string SK44 { get; set; }
-        public string SK45 { get; set; }
-        public string SK50 { get; set; }
-        public string SK51 { get; set; }
-        public string SK52 { get; set; }
-        public string SK53 { get; set; }
-        public string SK54 { get; set; }
-        public string SK55 { get; set; }
-        public int FT1 { get; set; }
-        public int FT2 { get; set; }
-        public int HT1 { get; set; }
-        public int HT2 { get; set; }
-        public int MOH { get; set; }
-        public string ISD { get; set; }
-        public string A15 { get; set; }
-        public string U15 { get; set; }
-        public string A35 { get; set; }
-        public string U35 { get; set; }
-        public string IYA15 { get; set; }
-        public string IYU15 { get; set; }
-    }
-
-    public class Detaylar
-    {
-        public int ID { get; set; }
-        public List<ARR> ARR { get; set; }
     }
 
     public class Maclar
@@ -576,16 +578,52 @@ namespace iddializer
         public string t { get; set; }
     }
 
-    public class HANDİKAP
+    public class MarketType
     {
-        public int e { get; set; }
-        public string goal { get; set; }
-        public int h2 { get; set; }
-        public int h1 { get; set; }
-        public int k2 { get; set; }
-        public int k1 { get; set; }
-        public int aeleme { get; set; }
-        public int tId { get; set; }
-        public int ogd { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Title { get; set; }
     }
+
+    public class Outcome
+    {
+        public int EventId { get; set; }
+        public int MarketId { get; set; }
+        public int MarketTypeId { get; set; }
+        public int OutcomeNo { get; set; }
+        public string OutcomeName { get; set; }
+        public string Odd { get; set; } //burası doble'idi string yaptım
+    }
+
+    public class Market
+    {
+        public int MarketId { get; set; }
+        public int MarketNo { get; set; }
+        public int EventId { get; set; }
+        public MarketType MarketType { get; set; }
+        public int MBS { get; set; }
+        public double SOV { get; set; }
+        public int MarketStatus { get; set; }
+        public List<Outcome> Outcomes { get; set; }
+        public string Title { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class Event
+    {
+        public int EventId { get; set; }
+        public int SportId { get; set; }
+        public DateTime StartDate { get; set; }
+        public int LeagueCode { get; set; }
+        public bool HasLive { get; set; }
+        public bool IsLive { get; set; }
+        public List<Market> Markets { get; set; }
+    }
+
+    public class Detaylar
+    {
+        public string Match { get; set; }
+        public Event Event { get; set; }
+    }
+
 }
